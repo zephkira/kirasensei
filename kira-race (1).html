@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>KIRA RACE — Japanese Translation Circuit</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   TOKENS — "Advanced Technology" palette
+   void (near-black) + circuit-cyan (player) + plasma-magenta (KIRA)
+   + signal-violet (chrome) + volt-amber (pressure) + ok/danger
+═══════════════════════════════════════════════════════════════════*/
+:root{
+  --void:        #03050b;
+  --void-2:      #070b16;
+  --panel:       rgba(12,18,32,0.86);
+  --panel-edge:  rgba(125,200,255,0.18);
+  --cyan:        #2dd9ff;
+  --cyan-dim:    rgba(45,217,255,0.16);
+  --magenta:     #ff2e7e;
+  --magenta-dim: rgba(255,46,126,0.16);
+  --violet:      #8a6bff;
+  --amber:       #ffcc33;
+  --ok:          #38ffb0;
+  --danger:      #ff3b5c;
+  --text-hi:     #eaf4ff;
+  --text-dim:    #7e8aa6;
+  --font-disp:   'Orbitron', sans-serif;
+  --font-body:   'Rajdhani', sans-serif;
+  --font-mono:   'Share Tech Mono', monospace;
+  --font-jp:     'Noto Sans JP', sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{
+  width:100%; height:100%;
+  overflow:hidden; overscroll-behavior:none;
+  background:var(--void);
+}
+body{
+  height:100vh; height:100dvh;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-body);
+  color:var(--text-hi);
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(138,107,255,0.10), transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(45,217,255,0.08), transparent 55%),
+    var(--void);
+}
+
+/* ── STAGE: the fixed game viewport, letterboxes on large screens, fills small screens ── */
+.stage{
+  position:relative;
+  width:100%; height:100%;
+  max-width:1180px; max-height:760px;
+  overflow:hidden;
+  background:var(--void-2);
+  box-shadow:0 0 0 1px var(--panel-edge), 0 30px 90px rgba(0,0,0,0.65);
+  display:flex; flex-direction:column;
+  user-select:none;
+}
+@media (min-width:760px) and (min-height:560px){
+  .stage{ border-radius:18px; }
+}
+
+/* faint ambient circuit grid across whole stage */
+.stage::before{
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(125,200,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125,200,255,0.05) 1px, transparent 1px);
+  background-size:34px 34px;
+  opacity:0.5;
+}
+
+/* ── screens ── */
+.screen{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  opacity:0; visibility:hidden; pointer-events:none;
+  transition:opacity 0.55s ease;
+  z-index:1;
+}
+.screen.active{ opacity:1; visibility:visible; pointer-events:auto; z-index:2; }
+
+/* small tag credit — persistent, ultra subtle */
+.credit-tag{
+  position:absolute; left:50%; bottom:6px; transform:translateX(-50%);
+  font-family:var(--font-mono); font-size:9px; letter-spacing:0.6px;
+  color:rgba(140,155,180,0.55);
+  text-shadow:0 1px 2px rgba(0,0,0,0.25);
+  pointer-events:none; user-select:none; z-index:99; white-space:nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BOOT SCREEN — plain white, KIRA name reveal, "advanced tech" fx
+═══════════════════════════════════════════════════════════════════*/
+#bootScreen{
+  background:#ffffff; color:#0b0e16;
+  align-items:center; justify-content:center;
+}
+.boot-grid{
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(10,20,40,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,20,40,0.05) 1px, transparent 1px);
+  background-size:28px 28px;
+}
+.boot-core{
+  position:relative; z-index:2;
+  display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vh,18px);
+  padding:20px;
+}
+.boot-word{
+  display:flex; gap:clamp(4px,1vw,10px);
+  font-family:var(--font-disp); font-weight:900;
+  font-size:clamp(40px,11vw,108px);
+  line-height:1;
+}
+.bw-letter{
+  color:transparent;
+  -webkit-text-stroke:1.5px #0b0e16;
+  opacity:0.35;
+  transition:color 0.4s ease, opacity 0.4s ease, text-shadow 0.4s ease, -webkit-text-stroke 0.4s ease;
+}
+.boot-core.lit .bw-letter{
+  color:var(--cyan);
+  -webkit-text-stroke:0px;
+  opacity:1;
+  text-shadow:0 0 18px rgba(45,217,255,0.65), 0 0 46px rgba(45,217,255,0.35);
+  animation:letterGlitch 2.4s ease-in-out infinite;
+  animation-delay:calc(var(--i) * 0.12s);
+}
+@keyframes letterGlitch{
+  0%,89%,100%{ transform:translate(0,0); filter:none; }
+  90%{ transform:translate(-2px,1px); filter:hue-rotate(20deg); }
+  92%{ transform:translate(2px,-1px); filter:hue-rotate(-15deg); }
+  94%{ transform:translate(0,0); filter:none; }
+}
+.boot-sub{
+  font-family:var(--font-mono); font-size:clamp(9px,1.6vw,13px);
+  letter-spacing:3px; color:#5d6b85; text-transform:uppercase;
+  min-height:1.4em;
+}
+.boot-bar{
+  width:min(260px,60vw); height:3px; border-radius:2px;
+  background:rgba(10,20,40,0.12); overflow:hidden;
+}
+.boot-bar-fill{
+  height:100%; width:0%;
+  background:linear-gradient(90deg,var(--cyan),var(--violet));
+  transition:width 0.25s linear;
+}
+.boot-tap{
+  margin-top:6px;
+  font-family:var(--font-mono); font-size:clamp(10px,1.8vw,13px);
+  letter-spacing:2px;
+  background:#0b0e16; color:#fff;
+  border:none; border-radius:30px;
+  padding:11px 26px;
+  cursor:pointer;
+  animation:bootPulse 1.8s ease-in-out infinite;
+}
+@keyframes bootPulse{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.04); opacity:0.85; } }
+.boot-tap.hidden{ display:none; }
+.boot-scan{
+  position:absolute; left:0; right:0; height:40%;
+  background:linear-gradient(180deg, transparent, rgba(45,217,255,0.16), transparent);
+  transform:translateY(-100%);
+  pointer-events:none; z-index:3; opacity:0;
+}
+.boot-core.lit ~ .boot-scan{ animation:scanSweep 1.6s ease-in-out 1; opacity:1; }
+@keyframes scanSweep{ from{ transform:translateY(-120%);} to{ transform:translateY(220%);} }
+
+/* ════════════════════════════════════════════════════════════════
+   MENU SCREEN
+═══════════════════════════════════════════════════════════════════*/
+#menuScreen{
+  align-items:center; justify-content:center; padding:clamp(14px,3vh,30px);
+}
+.menu-core{
+  position:relative; z-index:2;
+  width:100%; max-width:640px;
+  display:flex; flex-direction:column; align-items:center;
+  gap:clamp(10px,2vh,18px);
+}
+.brand-row{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-mono); font-size:clamp(9px,1.6vw,11px);
+  color:var(--cyan); letter-spacing:3px; text-transform:uppercase;
+}
+.brand-dot{
+  width:7px; height:7px; border-radius:50%; background:var(--ok);
+  box-shadow:0 0 8px var(--ok);
+  animation:dotPulse 1.4s ease-in-out infinite;
+}
+@keyframes dotPulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+.menu-title{
+  font-family:var(--font-disp); font-weight:900;
+  font-size:clamp(26px,6vw,48px);
+  text-align:center; letter-spacing:1px;
+  color:var(--text-hi);
+  text-shadow:0 0 30px rgba(45,217,255,0.25);
+}
+.menu-title span{ color:var(--magenta); text-shadow:0 0 30px rgba(255,46,126,0.35); }
+.menu-tagline{
+  font-size:clamp(12px,2vw,15px); color:var(--text-dim);
+  text-align:center; max-width:440px; line-height:1.5;
+}
+.cat-row{
+  width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+  margin-top:4px;
+}
+.cat-card{
+  background:var(--panel); border:1.5px solid var(--panel-edge);
+  border-radius:14px; padding:clamp(10px,1.8vh,16px) 8px;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  cursor:pointer; transition:all 0.18s ease;
+  text-align:center;
+}
+.cat-card:hover{ border-color:var(--cyan); transform:translateY(-2px); }
+.cat-card.active{
+  border-color:var(--cyan); background:var(--cyan-dim);
+  box-shadow:0 0 22px rgba(45,217,255,0.25), inset 0 0 18px rgba(45,217,255,0.08);
+}
+.cat-icon{ font-size:clamp(18px,3.4vw,26px); }
+.cat-label{ font-family:var(--font-disp); font-size:clamp(10px,1.8vw,13px); letter-spacing:1px; color:var(--text-hi); }
+.cat-sub{ font-size:clamp(9px,1.5vw,11px); color:var(--text-dim); }
+.cat-count{ font-family:var(--font-mono); font-size:clamp(8px,1.3vw,10px); color:var(--cyan); }
+.menu-cta{
+  margin-top:6px;
+  font-family:var(--font-disp); font-weight:700; letter-spacing:1.5px;
+  font-size:clamp(13px,2.4vw,17px);
+  color:#04141a;
+  background:linear-gradient(135deg,var(--cyan),#5be3ff);
+  border:none; border-radius:50px;
+  padding:clamp(11px,2vh,15px) clamp(34px,7vw,52px);
+  cursor:pointer;
+  box-shadow:0 8px 28px rgba(45,217,255,0.35);
+  transition:transform 0.15s ease, filter 0.15s ease;
+}
+.menu-cta:hover{ transform:translateY(-2px); filter:brightness(1.08); }
+.menu-cta:active{ transform:translateY(0); }
+.menu-foot{
+  display:flex; align-items:center; gap:10px; margin-top:2px;
+  font-size:clamp(10px,1.6vw,12px); color:var(--text-dim);
+}
+.icon-btn{
+  background:transparent; border:1.5px solid var(--panel-edge); color:var(--text-hi);
+  border-radius:50%; width:30px; height:30px; font-size:14px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all 0.15s ease;
+}
+.icon-btn:hover{ border-color:var(--cyan); }
+
+/* ════════════════════════════════════════════════════════════════
+   RACE SCREEN
+═══════════════════════════════════════════════════════════════════*/
+#raceScreen{ flex-direction:column; }
+
+/* HUD */
+.hud-bar{
+  position:relative; z-index:2;
+  display:flex; align-items:center; gap:clamp(6px,1.4vw,14px);
+  padding:clamp(8px,1.6vh,12px) clamp(10px,2vw,18px);
+  flex:0 0 auto;
+}
+.hud-exit{
+  background:rgba(255,59,92,0.12); border:1.5px solid rgba(255,59,92,0.4);
+  color:var(--danger); border-radius:8px; width:30px; height:30px;
+  font-size:14px; cursor:pointer; flex-shrink:0;
+}
+.hud-lives{ font-size:clamp(12px,2vw,16px); letter-spacing:2px; flex-shrink:0; }
+.hud-lives .lost{ opacity:0.18; filter:grayscale(1); }
+.hud-pill{
+  font-family:var(--font-mono); font-size:clamp(9px,1.6vw,12px);
+  background:var(--panel); border:1px solid var(--panel-edge);
+  border-radius:50px; padding:4px 12px; white-space:nowrap; flex-shrink:0;
+}
+.hud-pill b{ color:var(--cyan); font-weight:700; }
+.hud-clock{
+  font-family:var(--font-mono); font-size:clamp(12px,2.2vw,16px);
+  background:var(--panel); border:1px solid var(--panel-edge);
+  border-radius:50px; padding:4px 14px; color:var(--ok); flex-shrink:0;
+  transition:color 0.2s ease, border-color 0.2s ease;
+}
+.hud-clock.urgent{ color:var(--danger); border-color:rgba(255,59,92,0.5); animation:clockShake 0.4s ease-in-out infinite; }
+@keyframes clockShake{ 0%,100%{transform:translateX(0);} 50%{transform:translateX(1px);} }
+.hud-spacer{ flex:1; min-width:4px; }
+.hud-tag{
+  font-family:var(--font-mono); font-size:clamp(8px,1.4vw,11px);
+  color:var(--violet); border:1px solid rgba(138,107,255,0.4);
+  background:rgba(138,107,255,0.1); border-radius:50px; padding:4px 10px;
+  white-space:nowrap; display:none;
+}
+@media (min-width:520px){ .hud-tag{ display:inline-block; } }
+.hud-mute{
+  background:transparent; border:1.5px solid var(--panel-edge); color:var(--text-hi);
+  border-radius:8px; width:30px; height:30px; font-size:13px; cursor:pointer; flex-shrink:0;
+}
+
+/* timer progress strip */
+.timer-strip{ height:3px; background:rgba(125,200,255,0.08); flex:0 0 auto; position:relative; z-index:2; }
+.timer-strip-fill{ height:100%; width:100%; background:linear-gradient(90deg,var(--cyan),var(--violet)); transition:width 1s linear; }
+.timer-strip-fill.urgent{ background:linear-gradient(90deg,var(--amber),var(--danger)); }
+
+/* race stage: track + qa panel */
+.race-stage{
+  position:relative; z-index:2;
+  flex:1; min-height:0;
+  display:flex; gap:clamp(8px,1.6vw,14px);
+  padding:0 clamp(10px,2vw,18px) clamp(10px,1.8vh,16px);
+}
+@media (max-width:700px){
+  .race-stage{ flex-direction:column; }
+}
+
+/* TRACK */
+.track-area{
+  flex:1.4; min-width:0; min-height:0;
+  position:relative; border-radius:14px; overflow:hidden;
+  background:linear-gradient(180deg,#070d1a,#050811);
+  border:1px solid var(--panel-edge);
+}
+@media (max-width:700px){ .track-area{ flex:0 0 36%; } }
+.track-grid{
+  position:absolute; inset:0;
+  background-image:repeating-linear-gradient(100deg, rgba(45,217,255,0.07) 0 2px, transparent 2px 46px);
+  animation:trackScroll 1.4s linear infinite;
+}
+@keyframes trackScroll{ from{ background-position-x:0; } to{ background-position-x:-46px; } }
+.lap-tag, .status-tag{
+  position:absolute; top:8px; z-index:5;
+  font-family:var(--font-mono); font-size:clamp(8px,1.4vw,11px);
+  background:rgba(3,5,11,0.7); border:1px solid var(--panel-edge);
+  border-radius:50px; padding:3px 10px; color:var(--text-hi);
+}
+.lap-tag{ left:8px; }
+.status-tag{ right:8px; color:var(--cyan); }
+.lane{ position:absolute; left:0; right:0; height:1px; }
+.lane-player{ top:38%; background:rgba(45,217,255,0.25); }
+.lane-kira{ top:64%; background:rgba(255,46,126,0.25); }
+.pod{
+  position:absolute; top:50%; transform:translateY(-50%);
+  transition:left 0.3s ease-out; z-index:6;
+}
+.pod svg{ display:block; }
+.finish-gate{
+  position:absolute; top:14%; bottom:14%; right:5%; width:6px; z-index:4;
+  background:repeating-linear-gradient(180deg,#fff 0 6px, var(--violet) 6px 12px);
+  opacity:0.85; box-shadow:0 0 14px rgba(138,107,255,0.6);
+  border-radius:3px;
+}
+.progress-track{
+  position:absolute; left:6%; right:8%; height:4px; border-radius:3px;
+  background:rgba(255,255,255,0.06); z-index:5;
+}
+.progress-track.p-track{ top:43%; }
+.progress-track.k-track{ top:69%; }
+.progress-fill{ height:100%; border-radius:3px; transition:width 0.3s ease-out; }
+.progress-fill.p-fill{ background:linear-gradient(90deg,var(--cyan),#8af6ff); }
+.progress-fill.k-fill{ background:linear-gradient(90deg,var(--magenta),#ff8ab8); }
+
+/* QA PANEL */
+.qa-panel{
+  flex:1; min-width:0; min-height:0;
+  display:flex; flex-direction:column; gap:clamp(6px,1.2vh,10px);
+}
+.prompt-card{
+  background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px;
+  padding:clamp(8px,1.6vh,14px) clamp(10px,1.8vw,16px);
+  flex:0 0 auto;
+}
+.prompt-eyebrow{
+  font-family:var(--font-mono); font-size:clamp(8px,1.3vw,10px);
+  letter-spacing:2px; color:var(--violet); text-transform:uppercase; margin-bottom:4px;
+}
+.prompt-text{
+  font-family:var(--font-body); font-weight:700;
+  font-size:clamp(14px,2.6vw,21px); color:var(--text-hi);
+  line-height:1.25;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+}
+.choices{
+  flex:1; min-height:0; display:flex; flex-direction:column; gap:clamp(5px,1vh,8px);
+}
+.choice-btn{
+  flex:1; min-height:0;
+  display:flex; align-items:center; gap:8px;
+  background:var(--panel); border:1.5px solid var(--panel-edge); border-radius:10px;
+  padding:4px clamp(8px,1.6vw,14px);
+  cursor:pointer; text-align:left; width:100%;
+  transition:all 0.15s ease;
+  color:var(--text-hi);
+}
+.choice-btn:hover:not(:disabled){ border-color:var(--cyan); background:var(--cyan-dim); }
+.choice-letter{
+  font-family:var(--font-disp); font-size:clamp(9px,1.6vw,12px); color:var(--violet);
+  background:rgba(138,107,255,0.12); border-radius:6px;
+  width:clamp(18px,3vw,24px); height:clamp(18px,3vw,24px);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.choice-text{ display:flex; flex-direction:column; gap:0; min-width:0; }
+.choice-jp{ font-family:var(--font-jp); font-size:clamp(13px,2.4vw,18px); line-height:1.2;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.choice-romaji{ font-size:clamp(8px,1.3vw,10px); color:var(--text-dim); font-style:italic;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.choice-btn:disabled{ cursor:default; }
+.choice-btn.correct{
+  border-color:var(--ok); background:rgba(56,255,176,0.14);
+  box-shadow:0 0 18px rgba(56,255,176,0.25);
+}
+.choice-btn.correct .choice-jp{ color:var(--ok); }
+.choice-btn.wrong{
+  border-color:var(--danger); background:rgba(255,59,92,0.12);
+  animation:choiceShake 0.35s ease;
+}
+@keyframes choiceShake{
+  0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-5px); }
+  50%{ transform:translateX(5px); } 75%{ transform:translateX(-3px); }
+}
+.qa-hint{
+  font-family:var(--font-mono); font-size:clamp(8px,1.3vw,10px); color:var(--text-dim);
+  text-align:center; flex:0 0 auto;
+}
+
+/* feedback flash on track */
+.feedback-flash{
+  position:absolute; top:14%; left:50%; transform:translate(-50%,0);
+  font-family:var(--font-disp); font-size:clamp(14px,2.6vw,22px);
+  z-index:8; opacity:0; pointer-events:none; transition:opacity 0.15s ease;
+  text-shadow:0 2px 14px rgba(0,0,0,0.5);
+}
+.feedback-flash.show{ opacity:1; }
+
+/* ── overlays inside race screen ── */
+.overlay{
+  position:absolute; inset:0; z-index:40;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(3,5,11,0.82); backdrop-filter:blur(4px);
+  opacity:0; visibility:hidden; transition:opacity 0.3s ease;
+  padding:16px;
+}
+.overlay.show{ opacity:1; visibility:visible; }
+.overlay-card{
+  background:var(--panel); border:1.5px solid var(--panel-edge); border-radius:18px;
+  padding:clamp(20px,4vh,34px) clamp(18px,4vw,36px);
+  text-align:center; max-width:420px; width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.overlay-emoji{ font-size:clamp(40px,8vw,58px); margin-bottom:6px; }
+.overlay-title{
+  font-family:var(--font-disp); font-weight:900;
+  font-size:clamp(20px,4.2vw,30px); margin-bottom:6px; letter-spacing:1px;
+}
+.overlay-title.win{ color:var(--ok); text-shadow:0 0 24px rgba(56,255,176,0.4); }
+.overlay-title.lose{ color:var(--danger); text-shadow:0 0 24px rgba(255,59,92,0.4); }
+.overlay-jp{
+  font-family:var(--font-jp); font-weight:700; font-size:clamp(15px,3vw,20px);
+  margin-bottom:10px;
+}
+.overlay-sub{ font-size:clamp(12px,2.2vw,14px); color:var(--text-dim); margin-bottom:14px; line-height:1.5; }
+.overlay-stats{
+  font-family:var(--font-mono); font-size:clamp(11px,2vw,13px); color:var(--cyan);
+  margin-bottom:18px;
+}
+.overlay-btns{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+.btn-main{
+  font-family:var(--font-disp); font-weight:700; font-size:clamp(11px,2vw,13px); letter-spacing:1px;
+  color:#04141a; background:linear-gradient(135deg,var(--cyan),#5be3ff);
+  border:none; border-radius:50px; padding:11px 22px; cursor:pointer;
+  box-shadow:0 6px 20px rgba(45,217,255,0.3); transition:all 0.15s ease;
+}
+.btn-main:hover{ transform:translateY(-2px); }
+.btn-ghost{
+  font-family:var(--font-body); font-weight:600; font-size:clamp(11px,2vw,13px);
+  color:var(--text-hi); background:transparent; border:1.5px solid var(--panel-edge);
+  border-radius:50px; padding:10px 20px; cursor:pointer; transition:all 0.15s ease;
+}
+.btn-ghost:hover{ border-color:var(--cyan); color:var(--cyan); }
+
+/* countdown overlay */
+.countdown-num{
+  font-family:var(--font-disp); font-weight:900; font-size:clamp(60px,16vw,120px);
+  color:var(--cyan); text-shadow:0 0 50px rgba(45,217,255,0.55);
+  animation:countPop 0.7s ease-out;
+}
+@keyframes countPop{
+  0%{ transform:scale(2); opacity:0; } 45%{ transform:scale(1); opacity:1; }
+  80%{ transform:scale(1); opacity:1; } 100%{ transform:scale(0.85); opacity:0; }
+}
+
+/* danger flash for lose — whole stage warning */
+.danger-flash{
+  position:absolute; inset:0; pointer-events:none; z-index:35;
+  background:radial-gradient(ellipse at center, rgba(255,59,92,0) 35%, rgba(255,59,92,0.55) 100%);
+  opacity:0;
+}
+.danger-flash.active{ animation:dangerPulse 0.55s ease-in-out 4; }
+@keyframes dangerPulse{ 0%,100%{ opacity:0; } 50%{ opacity:1; } }
+
+/* confetti */
+.confetti-layer{ position:absolute; inset:0; z-index:45; pointer-events:none; overflow:hidden; }
+.confetti-piece{
+  position:absolute; top:-6%; width:8px; height:14px; opacity:0.95;
+  animation:confettiFall linear forwards;
+}
+@keyframes confettiFall{
+  to{ top:112%; transform:rotate(var(--rot)); opacity:0.2; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EXIT SCREEN
+═══════════════════════════════════════════════════════════════════*/
+#exitScreen{ align-items:center; justify-content:center; text-align:center; }
+.exit-core{ display:flex; flex-direction:column; align-items:center; gap:14px; padding:20px; }
+.exit-title{
+  font-family:var(--font-disp); font-weight:900; font-size:clamp(20px,4.4vw,30px);
+  color:var(--text-hi);
+}
+.exit-sub{ font-size:clamp(12px,2.2vw,14px); color:var(--text-dim); max-width:380px; line-height:1.6; }
+
+/* utility */
+.hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <!-- ════════════ BOOT SCREEN ════════════ -->
+  <div class="screen active" id="bootScreen">
+    <div class="boot-grid"></div>
+    <div class="boot-core" id="bootCore">
+      <div class="boot-word" id="bootWord">
+        <span class="bw-letter" style="--i:0">K</span>
+        <span class="bw-letter" style="--i:1">I</span>
+        <span class="bw-letter" style="--i:2">R</span>
+        <span class="bw-letter" style="--i:3">A</span>
+      </div>
+      <div class="boot-sub" id="bootSub">NEURAL TRANSLATION ENGINE</div>
+      <div class="boot-bar"><div class="boot-bar-fill" id="bootBarFill"></div></div>
+      <button class="boot-tap" id="bootTapBtn">▶ TAP TO INITIALIZE</button>
+    </div>
+    <div class="boot-scan"></div>
+  </div>
+
+  <!-- ════════════ MENU SCREEN ════════════ -->
+  <div class="screen" id="menuScreen">
+    <div class="menu-core">
+      <div class="brand-row"><span class="brand-dot"></span> KIRA SYSTEMS · ONLINE</div>
+      <div class="menu-title">翻訳<span>RACE</span></div>
+      <div class="menu-tagline">Pick the correct Japanese translation before KIRA's pod overtakes yours. Choose your circuit difficulty below.</div>
+
+      <div class="cat-row" id="catRow">
+        <div class="cat-card active" data-cat="easy">
+          <div class="cat-icon">🔤</div>
+          <div class="cat-label">EASY</div>
+          <div class="cat-sub">Words</div>
+          <div class="cat-count" id="countEasy">— loaded</div>
+        </div>
+        <div class="cat-card" data-cat="medium">
+          <div class="cat-icon">💬</div>
+          <div class="cat-label">MEDIUM</div>
+          <div class="cat-sub">Phrases</div>
+          <div class="cat-count" id="countMedium">— loaded</div>
+        </div>
+        <div class="cat-card" data-cat="hard">
+          <div class="cat-icon">📘</div>
+          <div class="cat-label">HARD</div>
+          <div class="cat-sub">Sentences</div>
+          <div class="cat-count" id="countHard">— loaded</div>
+        </div>
+      </div>
+
+      <button class="menu-cta" id="enterRaceBtn">ENTER RACE ▶</button>
+
+      <div class="menu-foot">
+        <button class="icon-btn" id="muteBtnMenu" title="Toggle sound">🔊</button>
+        <span>Multiple choice · Audio pronunciation included</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ RACE SCREEN ════════════ -->
+  <div class="screen" id="raceScreen">
+
+    <div class="hud-bar">
+      <button class="hud-exit" id="exitBtn" title="Exit / pause">✕</button>
+      <div class="hud-lives" id="livesDisplay">⚡⚡⚡</div>
+      <div class="hud-pill">SCORE <b id="scoreDisplay">0</b></div>
+      <div class="hud-clock" id="clockDisplay">0:00</div>
+      <div class="hud-spacer"></div>
+      <div class="hud-tag" id="diffTag">EASY · WORDS</div>
+      <button class="hud-mute" id="muteBtnRace" title="Toggle sound">🔊</button>
+    </div>
+
+    <div class="timer-strip"><div class="timer-strip-fill" id="timerStripFill"></div></div>
+
+    <div class="race-stage">
+      <!-- TRACK -->
+      <div class="track-area" id="trackArea">
+        <div class="track-grid"></div>
+        <div class="lap-tag" id="lapTag">Q 1</div>
+        <div class="status-tag" id="statusTag">🏁 READY</div>
+
+        <div class="lane lane-player"></div>
+        <div class="lane lane-kira"></div>
+
+        <div class="progress-track p-track"><div class="progress-fill p-fill" id="playerBar" style="width:0%;"></div></div>
+        <div class="progress-track k-track"><div class="progress-fill k-fill" id="kiraBar" style="width:0%;"></div></div>
+
+        <div class="pod" id="playerPod" style="top:38%; left:3%;">
+          <svg width="38" height="22" viewBox="0 0 38 22">
+            <ellipse cx="19" cy="13" rx="17" ry="6" fill="#0b2230"/>
+            <ellipse cx="19" cy="11" rx="14" ry="6" fill="#2dd9ff"/>
+            <ellipse cx="19" cy="9" rx="8" ry="3.4" fill="#d6faff" opacity="0.9"/>
+            <circle cx="6" cy="13" r="2.4" fill="#8af6ff"/>
+            <text x="11" y="20" font-size="6" fill="#8af6ff" font-family="Arial" font-weight="bold">YOU</text>
+          </svg>
+        </div>
+        <div class="pod" id="kiraPod" style="top:64%; left:3%;">
+          <svg width="38" height="22" viewBox="0 0 38 22">
+            <ellipse cx="19" cy="13" rx="17" ry="6" fill="#2c0b1c"/>
+            <ellipse cx="19" cy="11" rx="14" ry="6" fill="#ff2e7e"/>
+            <ellipse cx="19" cy="9" rx="8" ry="3.4" fill="#ffd6e7" opacity="0.9"/>
+            <circle cx="6" cy="13" r="2.4" fill="#ff8ab8"/>
+            <text x="9" y="20" font-size="6" fill="#ff8ab8" font-family="Arial" font-weight="bold">KIRA</text>
+          </svg>
+        </div>
+
+        <div class="finish-gate"></div>
+        <div class="feedback-flash" id="feedbackFlash"></div>
+      </div>
+
+      <!-- QA PANEL -->
+      <div class="qa-panel">
+        <div class="prompt-card">
+          <div class="prompt-eyebrow" id="promptEyebrow">TRANSLATE THIS WORD</div>
+          <div class="prompt-text" id="promptText">—</div>
+        </div>
+        <div class="choices" id="choices">
+          <button class="choice-btn" data-idx="0"><span class="choice-letter">A</span><span class="choice-text"><span class="choice-jp"></span><span class="choice-romaji"></span></span></button>
+          <button class="choice-btn" data-idx="1"><span class="choice-letter">B</span><span class="choice-text"><span class="choice-jp"></span><span class="choice-romaji"></span></span></button>
+          <button class="choice-btn" data-idx="2"><span class="choice-letter">C</span><span class="choice-text"><span class="choice-jp"></span><span class="choice-romaji"></span></span></button>
+          <button class="choice-btn" data-idx="3"><span class="choice-letter">D</span><span class="choice-text"><span class="choice-jp"></span><span class="choice-romaji"></span></span></button>
+        </div>
+        <div class="qa-hint">Tap an answer · 🔊 hear correct pronunciation</div>
+      </div>
+    </div>
+
+    <div class="danger-flash" id="dangerFlash"></div>
+    <div class="confetti-layer" id="confettiLayer"></div>
+
+    <!-- countdown -->
+    <div class="overlay" id="countdownOverlay">
+      <div class="countdown-num" id="countdownNum">3</div>
+    </div>
+
+    <!-- pause / exit menu -->
+    <div class="overlay" id="pauseOverlay">
+      <div class="overlay-card">
+        <div class="overlay-emoji">⏸️</div>
+        <div class="overlay-title" style="color:var(--text-hi);">RACE PAUSED</div>
+        <div class="overlay-sub">Resume your race, switch to another category, or exit the game.</div>
+        <div class="overlay-btns">
+          <button class="btn-main" id="resumeBtn">▶ Resume</button>
+          <button class="btn-ghost" id="categoryFromPauseBtn">Change Category</button>
+          <button class="btn-ghost" id="exitFromPauseBtn">Exit Game</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- win overlay -->
+    <div class="overlay" id="winOverlay">
+      <div class="overlay-card">
+        <div class="overlay-emoji">🏆</div>
+        <div class="overlay-title win">YOU WIN!</div>
+        <div class="overlay-jp" id="winJp">おめでとうございます！</div>
+        <div class="overlay-sub" id="winMsg">You outran KIRA on the translation circuit!</div>
+        <div class="overlay-stats" id="winStats"></div>
+        <div class="overlay-btns">
+          <button class="btn-main" id="raceAgainWinBtn">🔄 Race Again</button>
+          <button class="btn-ghost" id="categoryFromWinBtn">Change Category</button>
+          <button class="btn-ghost" id="exitFromWinBtn">Exit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- lose overlay -->
+    <div class="overlay" id="loseOverlay">
+      <div class="overlay-card">
+        <div class="overlay-emoji">😭</div>
+        <div class="overlay-title lose">YOU LOSE</div>
+        <div class="overlay-jp" id="loseJp">残念！</div>
+        <div class="overlay-sub" id="loseMsg">KIRA's pod crossed the gate first. Try again!</div>
+        <div class="overlay-stats" id="loseStats"></div>
+        <div class="overlay-btns">
+          <button class="btn-main" id="raceAgainLoseBtn">🔄 Try Again</button>
+          <button class="btn-ghost" id="categoryFromLoseBtn">Change Category</button>
+          <button class="btn-ghost" id="exitFromLoseBtn">Exit</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════════════ EXIT SCREEN ════════════ -->
+  <div class="screen" id="exitScreen">
+    <div class="exit-core">
+      <div style="font-size:42px;">⏻</div>
+      <div class="exit-title">SESSION TERMINATED</div>
+      <div class="exit-sub">Thanks for training with KIRA. Close this tab to fully exit, or jump back in anytime.</div>
+      <button class="btn-main" id="backToMenuBtn">↺ Return to Menu</button>
+    </div>
+  </div>
+
+  <div class="credit-tag">created by ricasmacaraig</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   WORD BANKS
+   Each category array supports growth up to 1000 entries — simply
+   append more {en, jp, romaji} objects below. Currently populated
+   with a curated, accuracy-checked common-vocabulary set.
+═══════════════════════════════════════════════════════════════════*/
+const BANK_EASY = [
+  {en:'one',jp:'一',romaji:'ichi'},{en:'two',jp:'二',romaji:'ni'},{en:'three',jp:'三',romaji:'san'},
+  {en:'four',jp:'四',romaji:'yon'},{en:'five',jp:'五',romaji:'go'},{en:'six',jp:'六',romaji:'roku'},
+  {en:'seven',jp:'七',romaji:'nana'},{en:'eight',jp:'八',romaji:'hachi'},{en:'nine',jp:'九',romaji:'kyuu'},
+  {en:'ten',jp:'十',romaji:'juu'},
+  {en:'red',jp:'赤',romaji:'aka'},{en:'blue',jp:'青',romaji:'ao'},{en:'yellow',jp:'黄色',romaji:'kiiro'},
+  {en:'green',jp:'緑',romaji:'midori'},{en:'white',jp:'白',romaji:'shiro'},{en:'black',jp:'黒',romaji:'kuro'},
+  {en:'pink',jp:'ピンク',romaji:'pinku'},{en:'purple',jp:'紫',romaji:'murasaki'},
+  {en:'orange (color)',jp:'オレンジ',romaji:'orenji'},{en:'brown',jp:'茶色',romaji:'chairo'},
+  {en:'dog',jp:'犬',romaji:'inu'},{en:'cat',jp:'猫',romaji:'neko'},{en:'bird',jp:'鳥',romaji:'tori'},
+  {en:'fish (animal)',jp:'魚',romaji:'sakana'},{en:'rabbit',jp:'うさぎ',romaji:'usagi'},
+  {en:'horse',jp:'馬',romaji:'uma'},{en:'cow',jp:'牛',romaji:'ushi'},{en:'pig',jp:'豚',romaji:'buta'},
+  {en:'monkey',jp:'猿',romaji:'saru'},{en:'bear',jp:'熊',romaji:'kuma'},{en:'elephant',jp:'象',romaji:'zou'},
+  {en:'lion',jp:'ライオン',romaji:'raion'},{en:'snake',jp:'蛇',romaji:'hebi'},
+  {en:'rice',jp:'ご飯',romaji:'gohan'},{en:'bread',jp:'パン',romaji:'pan'},{en:'water',jp:'水',romaji:'mizu'},
+  {en:'tea',jp:'お茶',romaji:'ocha'},{en:'coffee',jp:'コーヒー',romaji:'koohii'},
+  {en:'milk',jp:'牛乳',romaji:'gyuunyuu'},{en:'egg',jp:'卵',romaji:'tamago'},{en:'meat',jp:'肉',romaji:'niku'},
+  {en:'vegetable',jp:'野菜',romaji:'yasai'},{en:'fruit',jp:'果物',romaji:'kudamono'},
+  {en:'apple',jp:'りんご',romaji:'ringo'},{en:'banana',jp:'バナナ',romaji:'banana'},
+  {en:'cake',jp:'ケーキ',romaji:'keeki'},{en:'sushi',jp:'寿司',romaji:'sushi'},
+  {en:'ramen',jp:'ラーメン',romaji:'raamen'},{en:'curry',jp:'カレー',romaji:'karee'},
+  {en:'mother',jp:'お母さん',romaji:'okaasan'},{en:'father',jp:'お父さん',romaji:'otousan'},
+  {en:'older brother',jp:'お兄さん',romaji:'oniisan'},{en:'older sister',jp:'お姉さん',romaji:'oneesan'},
+  {en:'younger brother',jp:'弟',romaji:'otouto'},{en:'younger sister',jp:'妹',romaji:'imouto'},
+  {en:'grandmother',jp:'おばあさん',romaji:'obaasan'},{en:'grandfather',jp:'おじいさん',romaji:'ojiisan'},
+  {en:'family',jp:'家族',romaji:'kazoku'},{en:'friend',jp:'友達',romaji:'tomodachi'},
+  {en:'child',jp:'子供',romaji:'kodomo'},{en:'baby',jp:'赤ちゃん',romaji:'akachan'},
+  {en:'today',jp:'今日',romaji:'kyou'},{en:'tomorrow',jp:'明日',romaji:'ashita'},
+  {en:'yesterday',jp:'昨日',romaji:'kinou'},{en:'morning',jp:'朝',romaji:'asa'},
+  {en:'night',jp:'夜',romaji:'yoru'},{en:'week',jp:'週',romaji:'shuu'},
+  {en:'month',jp:'月',romaji:'tsuki'},{en:'year',jp:'年',romaji:'toshi'},{en:'now',jp:'今',romaji:'ima'},
+  {en:'Monday',jp:'月曜日',romaji:'getsuyoubi'},{en:'Tuesday',jp:'火曜日',romaji:'kayoubi'},
+  {en:'Friday',jp:'金曜日',romaji:'kinyoubi'},{en:'Sunday',jp:'日曜日',romaji:'nichiyoubi'},
+  {en:'school',jp:'学校',romaji:'gakkou'},{en:'house',jp:'家',romaji:'ie'},
+  {en:'station',jp:'駅',romaji:'eki'},{en:'hospital',jp:'病院',romaji:'byouin'},
+  {en:'park',jp:'公園',romaji:'kouen'},{en:'store',jp:'店',romaji:'mise'},
+  {en:'restaurant',jp:'レストラン',romaji:'resutoran'},{en:'library',jp:'図書館',romaji:'toshokan'},
+  {en:'airport',jp:'空港',romaji:'kuukou'},{en:'hotel',jp:'ホテル',romaji:'hoteru'},
+  {en:'Japan',jp:'日本',romaji:'nihon'},
+  {en:'head',jp:'頭',romaji:'atama'},{en:'eye',jp:'目',romaji:'me'},{en:'ear',jp:'耳',romaji:'mimi'},
+  {en:'mouth',jp:'口',romaji:'kuchi'},{en:'hand',jp:'手',romaji:'te'},{en:'foot',jp:'足',romaji:'ashi'},
+  {en:'face',jp:'顔',romaji:'kao'},{en:'hair',jp:'髪',romaji:'kami'},
+  {en:'rain',jp:'雨',romaji:'ame'},{en:'snow',jp:'雪',romaji:'yuki'},{en:'wind',jp:'風',romaji:'kaze'},
+  {en:'cloud',jp:'雲',romaji:'kumo'},{en:'sky',jp:'空',romaji:'sora'},{en:'weather',jp:'天気',romaji:'tenki'},
+  {en:'book',jp:'本',romaji:'hon'},{en:'pencil',jp:'鉛筆',romaji:'enpitsu'},
+  {en:'paper',jp:'紙',romaji:'kami(paper)'},{en:'desk',jp:'机',romaji:'tsukue'},
+  {en:'chair',jp:'椅子',romaji:'isu'},{en:'bag',jp:'かばん',romaji:'kaban'},{en:'notebook',jp:'ノート',romaji:'nooto'},
+  {en:'to eat',jp:'食べる',romaji:'taberu'},{en:'to drink',jp:'飲む',romaji:'nomu'},
+  {en:'to see',jp:'見る',romaji:'miru'},{en:'to read',jp:'読む',romaji:'yomu'},
+  {en:'to write',jp:'書く',romaji:'kaku'},{en:'to go',jp:'行く',romaji:'iku'},
+  {en:'to come',jp:'来る',romaji:'kuru'},{en:'to listen',jp:'聞く',romaji:'kiku'},
+  {en:'to speak',jp:'話す',romaji:'hanasu'},{en:'to buy',jp:'買う',romaji:'kau'},
+  {en:'to sleep',jp:'寝る',romaji:'neru'},{en:'to run',jp:'走る',romaji:'hashiru'},
+  {en:'to study',jp:'勉強する',romaji:'benkyou suru'},{en:'to swim',jp:'泳ぐ',romaji:'oyogu'},
+  {en:'to sing',jp:'歌う',romaji:'utau'},{en:'to wait',jp:'待つ',romaji:'matsu'},
+  {en:'big',jp:'大きい',romaji:'ookii'},{en:'small',jp:'小さい',romaji:'chiisai'},
+  {en:'hot (weather)',jp:'暑い',romaji:'atsui'},{en:'cold (weather)',jp:'寒い',romaji:'samui'},
+  {en:'new',jp:'新しい',romaji:'atarashii'},{en:'old (thing)',jp:'古い',romaji:'furui'},
+  {en:'good',jp:'いい',romaji:'ii'},{en:'fast',jp:'速い',romaji:'hayai'},{en:'slow',jp:'遅い',romaji:'osoi'},
+  {en:'expensive',jp:'高い',romaji:'takai'},{en:'cheap',jp:'安い',romaji:'yasui'},
+  {en:'fun',jp:'楽しい',romaji:'tanoshii'},{en:'difficult',jp:'難しい',romaji:'muzukashii'},
+  {en:'easy',jp:'簡単',romaji:'kantan'},{en:'delicious',jp:'おいしい',romaji:'oishii'},
+  {en:'cute',jp:'かわいい',romaji:'kawaii'},{en:'long',jp:'長い',romaji:'nagai'},
+  {en:'short',jp:'短い',romaji:'mijikai'},
+  {en:'car',jp:'車',romaji:'kuruma'},{en:'train',jp:'電車',romaji:'densha'},
+  {en:'bus',jp:'バス',romaji:'basu'},{en:'bicycle',jp:'自転車',romaji:'jitensha'},
+  {en:'airplane',jp:'飛行機',romaji:'hikouki'},{en:'phone',jp:'電話',romaji:'denwa'},
+  {en:'money',jp:'お金',romaji:'okane'},{en:'name',jp:'名前',romaji:'namae'},
+  {en:'music',jp:'音楽',romaji:'ongaku'},{en:'movie',jp:'映画',romaji:'eiga'},
+  {en:'photo',jp:'写真',romaji:'shashin'},{en:'letter (mail)',jp:'手紙',romaji:'tegami'},
+  {en:'window',jp:'窓',romaji:'mado'},{en:'room',jp:'部屋',romaji:'heya'},
+  {en:'key',jp:'鍵',romaji:'kagi'},{en:'umbrella',jp:'傘',romaji:'kasa'}
+];
+
+const BANK_MEDIUM = [
+  {en:'Good morning',jp:'おはようございます',romaji:'ohayou gozaimasu'},
+  {en:'Good afternoon / Hello',jp:'こんにちは',romaji:'konnichiwa'},
+  {en:'Good evening',jp:'こんばんは',romaji:'konbanwa'},
+  {en:'Good night',jp:'おやすみなさい',romaji:'oyasuminasai'},
+  {en:'Goodbye',jp:'さようなら',romaji:'sayounara'},
+  {en:'See you later',jp:'またね',romaji:'mata ne'},
+  {en:'Nice to meet you',jp:'はじめまして',romaji:'hajimemashite'},
+  {en:'Thank you very much',jp:'ありがとうございます',romaji:'arigatou gozaimasu'},
+  {en:"You're welcome",jp:'どういたしまして',romaji:'dou itashimashite'},
+  {en:"I'm sorry",jp:'ごめんなさい',romaji:'gomen nasai'},
+  {en:'Excuse me',jp:'すみません',romaji:'sumimasen'},
+  {en:'Please',jp:'お願いします',romaji:'onegai shimasu'},
+  {en:'How are you?',jp:'お元気ですか',romaji:'ogenki desu ka'},
+  {en:"I'm fine",jp:'元気です',romaji:'genki desu'},
+  {en:'Welcome (to a shop)',jp:'いらっしゃいませ',romaji:'irasshaimase'},
+  {en:'Congratulations',jp:'おめでとうございます',romaji:'omedetou gozaimasu'},
+  {en:'Happy birthday',jp:'お誕生日おめでとう',romaji:'otanjoubi omedetou'},
+  {en:'Take care of yourself',jp:'お大事に',romaji:'odaiji ni'},
+  {en:'Good luck',jp:'頑張って',romaji:'ganbatte'},
+  {en:'Let\u2019s eat (before a meal)',jp:'いただきます',romaji:'itadakimasu'},
+  {en:'Thanks for the meal',jp:'ごちそうさまでした',romaji:'gochisousama deshita'},
+  {en:"I'm home",jp:'ただいま',romaji:'tadaima'},
+  {en:'Welcome home',jp:'おかえりなさい',romaji:'okaeri nasai'},
+  {en:'See you tomorrow',jp:'また明日',romaji:'mata ashita'},
+  {en:"Long time no see",jp:'お久しぶりです',romaji:'ohisashiburi desu'},
+  {en:'What is this?',jp:'これは何ですか',romaji:'kore wa nan desu ka'},
+  {en:'How much is it?',jp:'いくらですか',romaji:'ikura desu ka'},
+  {en:'Where is the bathroom?',jp:'トイレはどこですか',romaji:'toire wa doko desu ka'},
+  {en:'What time is it?',jp:'何時ですか',romaji:'nanji desu ka'},
+  {en:"I don't understand",jp:'わかりません',romaji:'wakarimasen'},
+  {en:'I understand',jp:'わかりました',romaji:'wakarimashita'},
+  {en:'Please speak slowly',jp:'ゆっくり話してください',romaji:'yukkuri hanashite kudasai'},
+  {en:'Can you help me?',jp:'手伝ってもらえますか',romaji:'tetsudatte moraemasu ka'},
+  {en:'I like it',jp:'好きです',romaji:'suki desu'},
+  {en:"I don't like it",jp:'嫌いです',romaji:'kirai desu'},
+  {en:"It's delicious",jp:'おいしいです',romaji:'oishii desu'},
+  {en:"I'm hungry",jp:'お腹が空きました',romaji:'onaka ga sukimashita'},
+  {en:"I'm tired",jp:'疲れました',romaji:'tsukaremashita'},
+  {en:"Let's go",jp:'行きましょう',romaji:'ikimashou'},
+  {en:'Wait a moment please',jp:'ちょっと待ってください',romaji:'chotto matte kudasai'},
+  {en:"It's no problem",jp:'大丈夫です',romaji:'daijoubu desu'},
+  {en:'Of course',jp:'もちろん',romaji:'mochiron'},
+  {en:'Maybe / perhaps',jp:'たぶん',romaji:'tabun'},
+  {en:'I see / I understand now',jp:'なるほど',romaji:'naruhodo'},
+  {en:'Really?',jp:'本当ですか',romaji:'hontou desu ka'},
+  {en:"That's right",jp:'そうです',romaji:'sou desu'},
+  {en:'Nice weather today',jp:'今日はいい天気です',romaji:'kyou wa ii tenki desu'},
+  {en:"What's your name?",jp:'お名前は何ですか',romaji:'onamae wa nan desu ka'},
+  {en:'Where are you from?',jp:'どこから来ましたか',romaji:'doko kara kimashita ka'},
+  {en:'How old are you?',jp:'何歳ですか',romaji:'nansai desu ka'},
+  {en:"Let's study together",jp:'一緒に勉強しましょう',romaji:'issho ni benkyou shimashou'},
+  {en:'See you next week',jp:'また来週',romaji:'mata raishuu'},
+  {en:'Be careful',jp:'気をつけて',romaji:'ki wo tsukete'},
+  {en:'Please hurry',jp:'急いでください',romaji:'isoide kudasai'},
+  {en:'Please calm down',jp:'落ち着いてください',romaji:'ochitsuite kudasai'},
+  {en:'Cheers! (toast)',jp:'乾杯',romaji:'kanpai'},
+  {en:'Enjoy your meal',jp:'召し上がれ',romaji:'meshiagare'},
+  {en:"It's okay",jp:'大丈夫',romaji:'daijoubu'},
+  {en:"Sorry I'm late",jp:'遅れてすみません',romaji:'okurete sumimasen'},
+  {en:'Please wait here',jp:'ここで待ってください',romaji:'koko de matte kudasai'},
+  {en:'I have a question',jp:'質問があります',romaji:'shitsumon ga arimasu'},
+  {en:'One more time please',jp:'もう一度お願いします',romaji:'mou ichido onegai shimasu'},
+  {en:'I want to go home',jp:'家に帰りたいです',romaji:'ie ni kaeritai desu'},
+  {en:'See you again soon',jp:'また会いましょう',romaji:'mata aimashou'},
+  {en:'Please come in',jp:'どうぞお入りください',romaji:'douzo ohairi kudasai'},
+  {en:"I'm looking forward to it",jp:'楽しみにしています',romaji:'tanoshimi ni shiteimasu'},
+  {en:'Nice to see you again',jp:'また会えてうれしいです',romaji:'mata aete ureshii desu'}
+];
+
+const BANK_HARD = [
+  {en:'I am a student.',jp:'私は学生です。',romaji:'watashi wa gakusei desu'},
+  {en:'This is a book.',jp:'これは本です。',romaji:'kore wa hon desu'},
+  {en:'I eat breakfast every morning.',jp:'毎朝朝ご飯を食べます。',romaji:'maiasa asagohan wo tabemasu'},
+  {en:'She is reading a book.',jp:'彼女は本を読んでいます。',romaji:'kanojo wa hon wo yondeimasu'},
+  {en:'I go to school by train.',jp:'電車で学校に行きます。',romaji:'densha de gakkou ni ikimasu'},
+  {en:'He likes Japanese food.',jp:'彼は日本料理が好きです。',romaji:'kare wa nihon ryouri ga suki desu'},
+  {en:'I want to drink water.',jp:'水が飲みたいです。',romaji:'mizu ga nomitai desu'},
+  {en:'It is raining today.',jp:'今日は雨が降っています。',romaji:'kyou wa ame ga futteimasu'},
+  {en:'My friend lives in Tokyo.',jp:'友達は東京に住んでいます。',romaji:'tomodachi wa toukyou ni sundeimasu'},
+  {en:'I will study Japanese tomorrow.',jp:'明日日本語を勉強します。',romaji:'ashita nihongo wo benkyou shimasu'},
+  {en:'This restaurant is very delicious.',jp:'このレストランはとてもおいしいです。',romaji:'kono resutoran wa totemo oishii desu'},
+  {en:'Where is the train station?',jp:'駅はどこですか。',romaji:'eki wa doko desu ka'},
+  {en:'I bought a new bag.',jp:'新しいかばんを買いました。',romaji:'atarashii kaban wo kaimashita'},
+  {en:'We watched a movie together.',jp:'一緒に映画を見ました。',romaji:'issho ni eiga wo mimashita'},
+  {en:'Please open the window.',jp:'窓を開けてください。',romaji:'mado wo akete kudasai'},
+  {en:'I can speak a little Japanese.',jp:'少し日本語が話せます。',romaji:'sukoshi nihongo ga hanasemasu'},
+  {en:'The weather is nice today.',jp:'今日は天気がいいです。',romaji:'kyou wa tenki ga ii desu'},
+  {en:'I have two younger sisters.',jp:'妹が二人います。',romaji:'imouto ga futari imasu'},
+  {en:'He is taller than me.',jp:'彼は私より背が高いです。',romaji:'kare wa watashi yori se ga takai desu'},
+  {en:"Let's meet at the station at noon.",jp:'昼に駅で会いましょう。',romaji:'hiru ni eki de aimashou'},
+  {en:'I forgot my umbrella at home.',jp:'傘を家に忘れました。',romaji:'kasa wo ie ni wasuremashita'},
+  {en:'This is my favorite song.',jp:'これは私の好きな歌です。',romaji:'kore wa watashi no suki na uta desu'},
+  {en:'She speaks English very well.',jp:'彼女は英語がとても上手です。',romaji:'kanojo wa eigo ga totemo jouzu desu'},
+  {en:"I'm going to the hospital now.",jp:'今から病院に行きます。',romaji:'ima kara byouin ni ikimasu'},
+  {en:'The cat is sleeping on the bed.',jp:'猫がベッドで寝ています。',romaji:'neko ga beddo de neteimasu'},
+  {en:'I cooked dinner for my family.',jp:'家族のために夕食を作りました。',romaji:'kazoku no tame ni yuushoku wo tsukurimashita'},
+  {en:'This question is too difficult.',jp:'この問題は難しすぎます。',romaji:'kono mondai wa muzukashi sugimasu'},
+  {en:'Can I take a photo here?',jp:'ここで写真を撮ってもいいですか。',romaji:'koko de shashin wo tottemo ii desu ka'},
+  {en:'I lost my phone yesterday.',jp:'昨日電話をなくしました。',romaji:'kinou denwa wo nakushimashita'},
+  {en:"Let's go to the park tomorrow.",jp:'明日公園に行きましょう。',romaji:'ashita kouen ni ikimashou'},
+  {en:'I have lived in Japan for three years.',jp:'日本に三年間住んでいます。',romaji:'nihon ni sannenkan sundeimasu'},
+  {en:'He bought flowers for his mother.',jp:'彼はお母さんに花を買いました。',romaji:'kare wa okaasan ni hana wo kaimashita'},
+  {en:'The train was late this morning.',jp:'今朝電車が遅れました。',romaji:'kesa densha ga okuremashita'},
+  {en:'I want to become a teacher.',jp:'先生になりたいです。',romaji:'sensei ni naritai desu'},
+  {en:'This shirt is too small for me.',jp:'このシャツは私には小さすぎます。',romaji:'kono shatsu wa watashi niwa chiisa sugimasu'},
+  {en:'We are waiting for the bus.',jp:'バスを待っています。',romaji:'basu wo matteimasu'},
+  {en:'My birthday is in April.',jp:'私の誕生日は四月です。',romaji:'watashi no tanjoubi wa shigatsu desu'},
+  {en:'I usually wake up at seven.',jp:'いつも七時に起きます。',romaji:'itsumo shichiji ni okimasu'},
+  {en:'She gave me a present.',jp:'彼女はプレゼントをくれました。',romaji:'kanojo wa purezento wo kuremashita'},
+  {en:'The store closes at nine.',jp:'店は九時に閉まります。',romaji:'mise wa kuji ni shimarimasu'},
+  {en:"Let's take a break.",jp:'休憩しましょう。',romaji:'kyuukei shimashou'},
+  {en:'He runs every morning.',jp:'彼は毎朝走ります。',romaji:'kare wa maiasa hashirimasu'},
+  {en:'The mountain is very beautiful.',jp:'山はとても美しいです。',romaji:'yama wa totemo utsukushii desu'},
+  {en:'Can you help me with this?',jp:'これを手伝ってもらえますか。',romaji:'kore wo tetsudatte moraemasu ka'},
+  {en:'I will call you later.',jp:'後で電話します。',romaji:'ato de denwa shimasu'},
+  {en:'This is the first time I have been to Japan.',jp:'日本に来たのは初めてです。',romaji:'nihon ni kita no wa hajimete desu'},
+  {en:'The children are playing in the park.',jp:'子供たちが公園で遊んでいます。',romaji:'kodomotachi ga kouen de asondeimasu'},
+  {en:'I am looking forward to seeing you.',jp:'会うのを楽しみにしています。',romaji:'au no wo tanoshimi ni shiteimasu'},
+  {en:'I need to finish my homework.',jp:'宿題を終わらせなければなりません。',romaji:'shukudai wo owarasenakereba narimasen'},
+  {en:'This shop sells fresh vegetables.',jp:'この店は新鮮な野菜を売っています。',romaji:'kono mise wa shinsen na yasai wo utteimasu'}
+];
+
+const BANKS = { easy: BANK_EASY, medium: BANK_MEDIUM, hard: BANK_HARD };
+/* Per-category race tuning. timeLimit = total race clock (seconds).
+   idleMultCoef/idleCap = how fast & how far KIRA's rival-pod speeds up the
+   longer the player goes without a correct answer (scaled per category since
+   harder content naturally takes longer to read).
+   bonusIdleDiv = how forgiving the player's own progress bonus is toward
+   slower-but-still-correct answers on harder content.
+   slowFrames = how long (in 100ms ticks) KIRA is held back as a reward right
+   after the player answers correctly. */
+const DIFF = {
+  easy:   { label:'EASY · WORDS',     eyebrow:'TRANSLATE THIS WORD',     timeLimit:100, bank:'easy',
+            idleMultCoef:0.09,   idleCap:20, bonusIdleDiv:2, slowFrames:30 },
+  medium: { label:'MEDIUM · PHRASES', eyebrow:'TRANSLATE THIS PHRASE',   timeLimit:130, bank:'medium',
+            idleMultCoef:0.045,  idleCap:40, bonusIdleDiv:4, slowFrames:30 },
+  hard:   { label:'HARD · SENTENCES', eyebrow:'TRANSLATE THIS SENTENCE', timeLimit:165, bank:'hard',
+            idleMultCoef:0.0245, idleCap:73, bonusIdleDiv:7, slowFrames:60 }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   AUDIO ENGINE — Web Audio API (offline, license-free) + Speech
+═══════════════════════════════════════════════════════════════════*/
+let actx = null;
+let muted = false;
+function getACtx(){
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  return actx;
+}
+function unlockAudio(){
+  try{
+    const c = getACtx();
+    if (c.state === 'suspended') c.resume();
+  }catch(e){}
+}
+function playTone(freq, type, duration, vol, delay=0){
+  if (muted) return;
+  try{
+    const c = getACtx();
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.type = type; o.frequency.value = freq;
+    const t = c.currentTime + delay;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    o.start(t); o.stop(t + duration);
+  }catch(e){}
+}
+function sndCorrect(){ [659,880,1046,1318].forEach((f,i)=>playTone(f,'sine',0.16,0.12,i*0.07)); }
+function sndWrong(){ playTone(170,'sawtooth',0.3,0.1); playTone(120,'sawtooth',0.32,0.09,0.14); }
+function sndClick(){ playTone(740,'square',0.06,0.05); }
+function sndCountdown(){ playTone(523,'sine',0.16,0.14); }
+function sndGo(){ [523,659,784,1047,1319].forEach((f,i)=>playTone(f,'sine',0.22,0.13,i*0.06)); }
+function sndWin(){ [523,659,784,880,1047,880,1175,1319].forEach((f,i)=>playTone(f,'sine',0.2,0.13,i*0.09)); }
+function sndLose(){ [440,392,349,294,262,220].forEach((f,i)=>playTone(f,'sine',0.3,0.12,i*0.13)); }
+function sndUrgent(){ playTone(960,'sine',0.09,0.08); }
+function sndBootBeep(i){ playTone(440 + i*90,'sine',0.1,0.1,i*0.02); }
+function sndBootConfirm(){ [600,900,1200,1600].forEach((f,i)=>playTone(f,'sine',0.18,0.12,i*0.08)); }
+
+function speak(text, lang, rate){
+  if (muted || !('speechSynthesis' in window) || !text) return;
+  try{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang; u.rate = rate || 1;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+const CHEER_CORRECT = ['よくできました！','すごい！','やったね！','正解です！','その通り！','ナイス！','完璧です！','さすがです！'];
+const CHEER_WRONG = ['残念！','もう一度！','近い！','ファイト！','頑張って！','次があるよ！'];
+function cheerCorrect(){ speak(CHEER_CORRECT[Math.floor(Math.random()*CHEER_CORRECT.length)], 'ja-JP', 1.0); }
+function cheerWrong(){ speak(CHEER_WRONG[Math.floor(Math.random()*CHEER_WRONG.length)], 'ja-JP', 1.0); }
+
+/* ═══════════════════════════════════════════════════════════════
+   UTIL
+═══════════════════════════════════════════════════════════════════*/
+function shuffle(arr){
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function switchScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOT SEQUENCE
+═══════════════════════════════════════════════════════════════════*/
+const bootSubLines = ['CALIBRATING VOCABULARY MATRIX', 'SYNCING PRONUNCIATION CORE', 'READY'];
+document.getElementById('bootTapBtn').addEventListener('click', () => {
+  unlockAudio();
+  runBootSequence();
+}, { once:true });
+
+function runBootSequence(){
+  const tapBtn = document.getElementById('bootTapBtn');
+  const core = document.getElementById('bootCore');
+  const sub = document.getElementById('bootSub');
+  const fill = document.getElementById('bootBarFill');
+  tapBtn.classList.add('hidden');
+  core.classList.add('lit');
+
+  ['K','I','R','A'].forEach((_, i) => sndBootBeep(i));
+
+  let pct = 0;
+  let lineIdx = 0;
+  sub.textContent = bootSubLines[0];
+  const prog = setInterval(() => {
+    pct += 4;
+    fill.style.width = Math.min(pct,100) + '%';
+    if (pct > 34 && lineIdx === 0){ lineIdx = 1; sub.textContent = bootSubLines[1]; }
+    if (pct > 72 && lineIdx === 1){ lineIdx = 2; sub.textContent = bootSubLines[2]; }
+    if (pct >= 100){
+      clearInterval(prog);
+      sndBootConfirm();
+      setTimeout(() => {
+        switchScreen('menuScreen');
+      }, 500);
+    }
+  }, 60);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MENU LOGIC
+═══════════════════════════════════════════════════════════════════*/
+document.getElementById('countEasy').textContent = BANK_EASY.length + ' loaded';
+document.getElementById('countMedium').textContent = BANK_MEDIUM.length + ' loaded';
+document.getElementById('countHard').textContent = BANK_HARD.length + ' loaded';
+
+let currentDiff = 'easy';
+document.querySelectorAll('.cat-card').forEach(card => {
+  card.addEventListener('click', () => {
+    sndClick();
+    document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    currentDiff = card.dataset.cat;
+  });
+});
+
+function toggleMute(){
+  muted = !muted;
+  const icon = muted ? '🔇' : '🔊';
+  document.getElementById('muteBtnMenu').textContent = icon;
+  document.getElementById('muteBtnRace').textContent = icon;
+  if (!muted) sndClick();
+}
+document.getElementById('muteBtnMenu').addEventListener('click', toggleMute);
+document.getElementById('muteBtnRace').addEventListener('click', toggleMute);
+
+document.getElementById('enterRaceBtn').addEventListener('click', () => {
+  unlockAudio();
+  sndClick();
+  switchScreen('raceScreen');
+  prepareRace();
+  startCountdown();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME STATE
+═══════════════════════════════════════════════════════════════════*/
+let playerPct = 0, kiraPct = 0, lives = 3, score = 0;
+let deck = [], deckPos = 0, currentItem = null;
+let gameActive = false;
+let idleSeconds = 0, kiraSlowFrames = 0;
+let raceTimer = null, kiraTimer = null, idleTimer = null;
+let raceTimeLeft = 0;
+let questionNum = 0;
+let answered = false;
+
+function buildDeck(){
+  deck = shuffle(BANKS[currentDiff]);
+  deckPos = 0;
+}
+function nextDeckItem(){
+  if (deckPos >= deck.length){ deck = shuffle(BANKS[currentDiff]); deckPos = 0; }
+  return deck[deckPos++];
+}
+function buildOptions(item){
+  const pool = BANKS[currentDiff].filter(w => w.jp !== item.jp);
+  const distractors = shuffle(pool).slice(0,3);
+  return shuffle([item, ...distractors]);
+}
+
+function renderLives(){
+  const el = document.getElementById('livesDisplay');
+  let html = '';
+  for (let i=0;i<3;i++) html += `<span class="${i>=lives?'lost':''}">⚡</span>`;
+  el.innerHTML = html;
+}
+function updateClock(){
+  const m = Math.floor(raceTimeLeft/60), s = raceTimeLeft%60;
+  const el = document.getElementById('clockDisplay');
+  el.textContent = m + ':' + String(s).padStart(2,'0');
+  const urgent = raceTimeLeft <= 20;
+  el.classList.toggle('urgent', urgent);
+  document.getElementById('timerStripFill').classList.toggle('urgent', urgent);
+  const total = DIFF[currentDiff].timeLimit;
+  document.getElementById('timerStripFill').style.width = Math.max(0,(raceTimeLeft/total)*100) + '%';
+}
+function updatePods(){
+  const minLeft = 3, maxLeft = 84;
+  document.getElementById('playerPod').style.left = (minLeft + (playerPct/100)*(maxLeft-minLeft)) + '%';
+  document.getElementById('kiraPod').style.left = (minLeft + (kiraPct/100)*(maxLeft-minLeft)) + '%';
+  document.getElementById('playerBar').style.width = playerPct + '%';
+  document.getElementById('kiraBar').style.width = kiraPct + '%';
+}
+function flash(msg, color){
+  const el = document.getElementById('feedbackFlash');
+  el.textContent = msg; el.style.color = color;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 850);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PREPARE / START RACE
+═══════════════════════════════════════════════════════════════════*/
+function prepareRace(){
+  document.getElementById('diffTag').textContent = DIFF[currentDiff].label;
+  document.getElementById('promptEyebrow').textContent = DIFF[currentDiff].eyebrow;
+  playerPct = 0; kiraPct = 0; lives = 3; score = 0; questionNum = 0;
+  renderLives();
+  document.getElementById('scoreDisplay').textContent = '0';
+  document.getElementById('statusTag').textContent = '🏁 READY';
+  updatePods();
+  buildDeck();
+  ['winOverlay','loseOverlay','pauseOverlay'].forEach(id => document.getElementById(id).classList.remove('show'));
+}
+
+function startCountdown(){
+  const ov = document.getElementById('countdownOverlay');
+  ov.classList.add('show');
+  let n = 3;
+  const num = document.getElementById('countdownNum');
+  num.textContent = n;
+  sndCountdown();
+  const iv = setInterval(() => {
+    n--;
+    if (n > 0){
+      num.textContent = n;
+      num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'countPop 0.7s ease-out';
+      sndCountdown();
+    } else {
+      num.textContent = 'GO!';
+      num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'countPop 0.7s ease-out';
+      sndGo();
+      clearInterval(iv);
+      setTimeout(() => { ov.classList.remove('show'); beginRace(); }, 650);
+    }
+  }, 850);
+}
+
+function beginRace(){
+  gameActive = true;
+  raceTimeLeft = DIFF[currentDiff].timeLimit;
+  updateClock();
+  document.getElementById('statusTag').textContent = '💨 RACING';
+  idleSeconds = 0; kiraSlowFrames = 0;
+  loadNextQuestion();
+  startKiraAI();
+  startRaceTimer();
+  startIdleTimer();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   QUESTION FLOW
+═══════════════════════════════════════════════════════════════════*/
+function loadNextQuestion(){
+  currentItem = nextDeckItem();
+  questionNum++;
+  document.getElementById('lapTag').textContent = 'Q ' + questionNum;
+  document.getElementById('promptText').textContent = currentItem.en;
+  const opts = buildOptions(currentItem);
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach((btn, i) => {
+    const opt = opts[i];
+    btn.dataset.correct = (opt.jp === currentItem.jp) ? '1' : '0';
+    btn.dataset.jp = opt.jp;
+    btn.querySelector('.choice-jp').textContent = opt.jp;
+    btn.querySelector('.choice-romaji').textContent = opt.romaji;
+    btn.classList.remove('correct','wrong');
+    btn.disabled = false;
+  });
+  answered = false;
+}
+
+document.querySelectorAll('.choice-btn').forEach(btn => {
+  btn.addEventListener('click', () => selectChoice(btn));
+});
+
+function selectChoice(btn){
+  if (!gameActive || answered) return;
+  answered = true;
+  sndClick();
+  const isCorrect = btn.dataset.correct === '1';
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+  if (isCorrect){
+    btn.classList.add('correct');
+    handleCorrect();
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.dataset.correct === '1') b.classList.add('correct');
+    });
+    handleWrong();
+  }
+
+  setTimeout(() => {
+    if (isCorrect) cheerCorrect(); else cheerWrong();
+  }, 150);
+
+  if (gameActive){
+    setTimeout(() => { if (gameActive) loadNextQuestion(); }, 1750);
+  }
+}
+
+function handleCorrect(){
+  score += 10 + Math.ceil(raceTimeLeft/10);
+  document.getElementById('scoreDisplay').textContent = score;
+  const cfg = DIFF[currentDiff];
+  const bonus = Math.max(5, 11 - Math.floor(idleSeconds/cfg.bonusIdleDiv));
+  playerPct = Math.min(100, playerPct + bonus);
+  updatePods();
+  sndCorrect();
+  flash('✅ CORRECT', '#38ffb0');
+  idleSeconds = 0;
+  kiraSlowFrames = cfg.slowFrames;
+  document.getElementById('statusTag').textContent = '💨 ' + score + ' PTS';
+  if (playerPct >= 100){
+    gameActive = false;
+    setTimeout(() => endRace(true,'finish'), 300);
+  }
+}
+function handleWrong(){
+  lives = Math.max(0, lives - 1);
+  renderLives();
+  sndWrong();
+  flash('❌ WRONG', '#ff3b5c');
+  idleSeconds = Math.min(DIFF[currentDiff].idleCap, idleSeconds + 3);
+  kiraSlowFrames = 0;
+  if (lives <= 0){
+    gameActive = false;
+    setTimeout(() => endRace(false,'lives'), 500);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KIRA AI
+═══════════════════════════════════════════════════════════════════*/
+function startKiraAI(){
+  const cfg = DIFF[currentDiff];
+  // pct-per-100ms-tick KIRA gains at baseline pace (idleMult = 1, no slowdown).
+  // At this pace KIRA finishes the lap at the same rate the race clock runs out.
+  const base = 100 / (cfg.timeLimit * 10);
+  kiraTimer = setInterval(() => {
+    if (!gameActive) return;
+    let speed;
+    if (kiraSlowFrames > 0){
+      speed = base * 0.4;
+      kiraSlowFrames--;
+    } else {
+      const idleMult = Math.min(2.6, 1 + idleSeconds * cfg.idleMultCoef);
+      speed = base * idleMult;
+    }
+    kiraPct = Math.min(100, kiraPct + speed);
+    updatePods();
+    if (kiraPct >= 100){
+      gameActive = false;
+      clearInterval(kiraTimer);
+      setTimeout(() => endRace(false,'rival'), 200);
+    }
+  }, 100);
+}
+function startIdleTimer(){
+  idleTimer = setInterval(() => {
+    if (!gameActive) return;
+    idleSeconds = Math.min(DIFF[currentDiff].idleCap, idleSeconds + 1);
+  }, 1000);
+}
+function startRaceTimer(){
+  raceTimer = setInterval(() => {
+    if (!gameActive) return;
+    raceTimeLeft--;
+    updateClock();
+    if (raceTimeLeft <= 15 && raceTimeLeft % 3 === 0) sndUrgent();
+    if (raceTimeLeft <= 0){
+      gameActive = false;
+      clearInterval(raceTimer);
+      setTimeout(() => endRace(true,'time'), 100);
+    }
+  }, 1000);
+}
+function stopAllTimers(){
+  clearInterval(raceTimer); clearInterval(kiraTimer); clearInterval(idleTimer);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   END RACE — WIN / LOSE
+═══════════════════════════════════════════════════════════════════*/
+function endRace(playerWon, reason){
+  gameActive = false;
+  stopAllTimers();
+  document.getElementById('statusTag').textContent = playerWon ? '🏆 WINNER' : '💥 OFFLINE';
+
+  if (playerWon){
+    sndWin();
+    launchConfetti();
+    speak('おめでとうございます！', 'ja-JP', 0.95);
+    const msgs = {
+      finish: "You crossed the gate before KIRA's pod! 🏆",
+      time: "Time's up — you outlasted KIRA's pod! 🎉"
+    };
+    document.getElementById('winMsg').textContent = msgs[reason] || 'Great run!';
+    document.getElementById('winStats').textContent = `SCORE ${score} · Q${questionNum-1} CLEARED`;
+    document.getElementById('winOverlay').classList.add('show');
+  } else {
+    sndLose();
+    triggerDangerFlash();
+    speak('ドンマイ！もう一度頑張ろう！', 'ja-JP', 0.95);
+    const msgs = {
+      lives: "Your power cells ran out. Practice more and try again!",
+      rival: "KIRA's pod crossed the gate first. Type smarter, race again!"
+    };
+    document.getElementById('loseMsg').textContent = msgs[reason] || 'Better luck next time!';
+    document.getElementById('loseStats').textContent = `SCORE ${score} · Q${questionNum-1} CLEARED`;
+    document.getElementById('loseOverlay').classList.add('show');
+  }
+}
+
+function triggerDangerFlash(){
+  const el = document.getElementById('dangerFlash');
+  el.classList.remove('active'); void el.offsetWidth;
+  el.classList.add('active');
+}
+
+function launchConfetti(){
+  const layer = document.getElementById('confettiLayer');
+  const colors = ['#2dd9ff','#ff2e7e','#8a6bff','#ffcc33','#38ffb0'];
+  for (let i=0;i<70;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (1.8 + Math.random()*1.4) + 's';
+    p.style.animationDelay = (Math.random()*0.5) + 's';
+    p.style.setProperty('--rot', (Math.random()*720-360) + 'deg');
+    layer.appendChild(p);
+  }
+  setTimeout(() => { layer.innerHTML = ''; }, 3800);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAUSE / EXIT / CATEGORY CONTROLS
+═══════════════════════════════════════════════════════════════════*/
+document.getElementById('exitBtn').addEventListener('click', () => {
+  sndClick();
+  if (gameActive){ gameActive = false; stopAllTimers(); }
+  document.getElementById('pauseOverlay').classList.add('show');
+});
+document.getElementById('resumeBtn').addEventListener('click', () => {
+  sndClick();
+  document.getElementById('pauseOverlay').classList.remove('show');
+  if (!document.getElementById('winOverlay').classList.contains('show') &&
+      !document.getElementById('loseOverlay').classList.contains('show')){
+    gameActive = true;
+    startKiraAI(); startRaceTimer(); startIdleTimer();
+  }
+});
+function goToMenuFresh(){
+  stopAllTimers();
+  gameActive = false;
+  ['pauseOverlay','winOverlay','loseOverlay'].forEach(id => document.getElementById(id).classList.remove('show'));
+  switchScreen('menuScreen');
+}
+function goToExit(){
+  stopAllTimers();
+  gameActive = false;
+  ['pauseOverlay','winOverlay','loseOverlay'].forEach(id => document.getElementById(id).classList.remove('show'));
+  switchScreen('exitScreen');
+  setTimeout(() => { try{ window.close(); }catch(e){} }, 300);
+}
+document.getElementById('categoryFromPauseBtn').addEventListener('click', () => { sndClick(); goToMenuFresh(); });
+document.getElementById('exitFromPauseBtn').addEventListener('click', () => { sndClick(); goToExit(); });
+document.getElementById('categoryFromWinBtn').addEventListener('click', () => { sndClick(); goToMenuFresh(); });
+document.getElementById('exitFromWinBtn').addEventListener('click', () => { sndClick(); goToExit(); });
+document.getElementById('categoryFromLoseBtn').addEventListener('click', () => { sndClick(); goToMenuFresh(); });
+document.getElementById('exitFromLoseBtn').addEventListener('click', () => { sndClick(); goToExit(); });
+document.getElementById('backToMenuBtn').addEventListener('click', () => { sndClick(); switchScreen('menuScreen'); });
+
+function restartRace(){
+  sndClick();
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('loseOverlay').classList.remove('show');
+  prepareRace();
+  startCountdown();
+}
+document.getElementById('raceAgainWinBtn').addEventListener('click', restartRace);
+document.getElementById('raceAgainLoseBtn').addEventListener('click', restartRace);
+
+/* unlock audio on very first interaction anywhere, as a safety net */
+['pointerdown','keydown'].forEach(evt => {
+  document.addEventListener(evt, unlockAudio, { once:true, passive:true });
+});
+</script>
+</body>
+</html>
